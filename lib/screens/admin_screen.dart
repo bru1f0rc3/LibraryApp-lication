@@ -1,103 +1,79 @@
 import 'package:flutter/material.dart';
-import '../services/book_service.dart';
-import '../services/auth_service.dart';
-import '../models/auth.dart';
+import 'add_book_screen.dart';
+import 'delete_book_screen.dart';
 
-class AdminScreen extends StatefulWidget {
+class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
-
-  @override
-  State<AdminScreen> createState() => _AdminScreenState();
-}
-
-class _AdminScreenState extends State<AdminScreen> {
-  final BookService _bookService = BookService(AuthService());
-  List<Map<String, dynamic>> _requestedBooks = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadRequestedBooks();
-  }
-
-  Future<void> _loadRequestedBooks() async {
-    try {
-      final books = await _bookService.getRequestedBooks();
-      setState(() {
-        _requestedBooks = books;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e')),
-      );
-    }
-  }
-
-  Future<void> _approveRequest(int requestId) async {
-    try {
-      await _bookService.approveRequest(requestId);
-      await _loadRequestedBooks();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Запрос одобрен')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e')),
-      );
-    }
-  }
-
-  Future<void> _rejectRequest(int requestId) async {
-    try {
-      await _bookService.rejectRequest(requestId);
-      await _loadRequestedBooks();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Запрос отклонен')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка: $e')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Панель администратора'),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _requestedBooks.length,
-              itemBuilder: (context, index) {
-                final book = _requestedBooks[index];
-                return Card(
-                  margin: const EdgeInsets.all(8),
-                  child: ListTile(
-                    title: Text('Книга ID: ${book['bookId']}'),
-                    subtitle: Text('Пользователь ID: ${book['accountId']}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.check, color: Colors.green),
-                          onPressed: () => _approveRequest(book['id']),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.red),
-                          onPressed: () => _rejectRequest(book['id']),
-                        ),
-                      ],
-                    ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildAdminButton(
+              context,
+              'Добавить книгу',
+              Icons.add,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddBookScreen(),
                   ),
                 );
               },
             ),
+            const SizedBox(height: 20),
+            _buildAdminButton(
+              context,
+              'Удалить книгу',
+              Icons.delete,
+              () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DeleteBookScreen(),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
-} 
+
+  Widget _buildAdminButton(
+    BuildContext context,
+    String text,
+    IconData icon,
+    VoidCallback onPressed,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      height: 60,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon),
+        label: Text(
+          text,
+          style: const TextStyle(fontSize: 18),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).primaryColor,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+}
