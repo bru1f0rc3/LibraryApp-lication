@@ -37,7 +37,6 @@ class _AuthScreenState extends State<AuthScreen> {
       );
       
       if (mounted) {
-        // Заменяем текущий экран на MainScreen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -48,7 +47,10 @@ class _AuthScreenState extends State<AuthScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка авторизации: $e')),
+          SnackBar(
+            content: Text('Ошибка авторизации: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
       }
     } finally {
@@ -71,61 +73,86 @@ class _AuthScreenState extends State<AuthScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.library_books,
                     size: 80,
-                    color: Color(0xFF1E88E5),
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(height: 32),
                   Text(
                     'Добро пожаловать',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onBackground,
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
-                  TextFormField(
-                    controller: _loginController,
-                    decoration: const InputDecoration(
-                      labelText: 'Логин',
-                      border: OutlineInputBorder(),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _loginController,
+                            decoration: InputDecoration(
+                              labelText: 'Логин',
+                              prefixIcon: Icon(
+                                Icons.person_outline,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Пожалуйста, введите логин';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _passwordController,
+                            decoration: InputDecoration(
+                              labelText: 'Пароль',
+                              prefixIcon: Icon(
+                                Icons.lock_outline,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                            ),
+                            obscureText: true,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Пожалуйста, введите пароль';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Пожалуйста, введите логин';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      labelText: 'Пароль',
-                      border: OutlineInputBorder(),
-                    ),
-                    obscureText: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Пожалуйста, введите пароль';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton(
                     onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     child: _isLoading
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
                           )
-                        : const Text('Войти'),
+                        : const Text(
+                            'Войти',
+                            style: TextStyle(fontSize: 16),
+                          ),
                   ),
                   const SizedBox(height: 16),
                   TextButton(
@@ -137,7 +164,16 @@ class _AuthScreenState extends State<AuthScreen> {
                         ),
                       );
                     },
-                    child: const Text('Нет аккаунта? Зарегистрироваться'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text(
+                      'Нет аккаунта? Зарегистрироваться',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontSize: 16,
+                      ),
+                    ),
                   ),
                 ],
               ),

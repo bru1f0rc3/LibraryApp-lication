@@ -79,8 +79,8 @@ class _LibrarianScreenState extends State<LibrarianScreen> {
                 return Card(
                   margin: const EdgeInsets.all(8),
                   child: ListTile(
-                    title: Text('Книга ID: ${book['bookId']}'),
-                    subtitle: Text('Пользователь ID: ${book['accountId']}'),
+                    title: Text(book['bookTitle'] ?? 'Название книги не найдено'),
+                    subtitle: Text(book['FullName'] ?? 'Имя пользователя не найдено'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

@@ -184,68 +184,81 @@ class BookService {
 
   Future<List<Map<String, dynamic>>> getUserSavedBooks(int accountId) async {
     try {
+      print('Получение сохраненных книг для пользователя с ID: $accountId');
       final headers = await _authService.getAuthHeaders();
+      print('Заголовки запроса: $headers');
+      
       final response = await http.get(
         Uri.parse('$baseUrl/book/save/user/$accountId'),
         headers: headers,
       );
 
+      print('Статус ответа: ${response.statusCode}');
+      print('Тело ответа: ${response.body}');
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> books = data['Books'];
-        return books.cast<Map<String, dynamic>>();
+        final List<dynamic> data = jsonDecode(response.body);
+        print('Декодированные данные: $data');
+        
+        final List<Map<String, dynamic>> result = [];
+        for (var item in data) {
+          print('Обработка элемента: $item');
+          result.add({
+            'id': item['id'],
+            'bookTitle': item['bookTitle'],
+            'CoverLink': item['CoverLink'],
+            'createdAt': item['createdAt'],
+          });
+        }
+        print('Обработанные данные: $result');
+        return result;
       } else {
         throw Exception('Ошибка загрузки сохраненных книг: ${response.statusCode}');
       }
     } catch (e) {
+      print('Ошибка при получении сохраненных книг: $e');
       throw Exception('Ошибка сети: $e');
     }
   }
 
   Future<List<Map<String, dynamic>>> getUserBookEvents(int accountId) async {
     try {
+      print('Получение истории книг для пользователя с ID: $accountId');
       final headers = await _authService.getAuthHeaders();
+      print('Заголовки запроса: $headers');
+      
       final response = await http.get(
         Uri.parse('$baseUrl/book/events/user/$accountId'),
         headers: headers,
       );
 
+      print('Статус ответа: ${response.statusCode}');
+      print('Тело ответа: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        print('Декодированные данные: $data');
+        
         final List<dynamic> events = data['events'] ?? [];
+        final List<Map<String, dynamic>> result = [];
         
-        // Получаем все уникальные bookId из событий
-        final Set<int> bookIds = events.map((e) => e['bookId'] as int).toSet();
-        
-        // Получаем информацию о книгах
-        final Map<int, Book> books = {};
-        for (final bookId in bookIds) {
-          try {
-            final book = await getBookDetails(bookId);
-            books[bookId] = book;
-          } catch (e) {
-            print('Ошибка получения информации о книге $bookId: $e');
-          }
-        }
-
-        return events.map((event) {
-          final bookId = event['bookId'] as int;
-          final book = books[bookId];
-          
-          return {
+        for (var event in events) {
+          print('Обработка события: $event');
+          result.add({
             'id': event['id'] ?? 0,
-            'bookId': bookId,
-            'accountId': event['accountId'] ?? 0,
-            'eventType': event['eventType'] ?? '',
+            'eventType': event['eventType'] ?? 'Unknown',
             'createdAt': event['createdAt'] ?? '',
-            'bookTitle': book?.title ?? 'Книга не найдена',
-            'authorName': book?.authorName ?? 'Автор неизвестен',
-          };
-        }).toList();
+            'bookTitle': event['bookTitle'] ?? 'Книга не найдена',
+            'CoverLink': event['CoverLink'],
+          });
+        }
+        print('Обработанные данные: $result');
+        return result;
       } else {
-        throw Exception('Ошибка загрузки истории событий: ${response.statusCode}');
+        throw Exception('Ошибка загрузки истории книг: ${response.statusCode}');
       }
     } catch (e) {
+      print('Ошибка при получении истории книг: $e');
       throw Exception('Ошибка сети: $e');
     }
   }
@@ -262,36 +275,35 @@ class BookService {
         final data = jsonDecode(response.body);
         final List<dynamic> events = data['events'] ?? [];
         
-        // Получаем все уникальные bookId из событий
-        final Set<int> bookIds = events.map((e) => e['bookId'] as int).toSet();
-        
-        // Получаем информацию о книгах
-        final Map<int, Book> books = {};
-        for (final bookId in bookIds) {
+        final List<Map<String, dynamic>> result = [];
+        for (var event in events) {
           try {
-            final book = await getBookDetails(bookId);
-            books[bookId] = book;
+            final book = await getBookDetails(event['bookId']);
+            result.add({
+              'id': event['id'] ?? 0,
+              'eventType': event['eventType'] ?? 'Unknown',
+              'createdAt': event['createdAt'] ?? '',
+              'bookTitle': book.title,
+              'cover_Link': book.cover_Link,
+              'userLogin': event['userLogin'] ?? 'Неизвестен',
+              'userFullName': event['userFullName'] ?? 'Неизвестен',
+            });
           } catch (e) {
-            print('Ошибка получения информации о книге $bookId: $e');
+            print('Ошибка получения информации о книге ${event['bookId']}: $e');
+            result.add({
+              'id': event['id'] ?? 0,
+              'eventType': event['eventType'] ?? 'Unknown',
+              'createdAt': event['createdAt'] ?? '',
+              'bookTitle': 'Книга не найдена',
+              'cover_Link': null,
+              'userLogin': event['userLogin'] ?? 'Неизвестен',
+              'userFullName': event['userFullName'] ?? 'Неизвестен',
+            });
           }
         }
-
-        return events.map((event) {
-          final bookId = event['bookId'] as int;
-          final book = books[bookId];
-          
-          return {
-            'id': event['id'] ?? 0,
-            'bookId': bookId,
-            'accountId': event['accountId'] ?? 0,
-            'eventType': event['eventType'] ?? '',
-            'createdAt': event['createdAt'] ?? '',
-            'bookTitle': book?.title ?? 'Книга не найдена',
-            'authorName': book?.authorName ?? 'Автор неизвестен',
-          };
-        }).toList();
+        return result;
       } else {
-        throw Exception('Ошибка загрузки истории событий: ${response.statusCode}');
+        throw Exception('Ошибка сети: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('Ошибка сети: $e');
@@ -314,6 +326,33 @@ class BookService {
       }
     } catch (e) {
       throw Exception('Ошибка сети: $e');
+    }
+  }
+
+  Future<void> removeSavedBook(int savedBookId) async {
+    try {
+      final headers = await _authService.getAuthHeaders();
+      headers['Content-Type'] = 'application/json';
+      
+      final response = await http.delete(
+        Uri.parse('$baseUrl/book/save/$savedBookId'),
+        headers: headers,
+      );
+
+      print('Удаление книги: $savedBookId');
+      print('Статус ответа: ${response.statusCode}');
+      print('Тело ответа: ${response.body}');
+
+      if (response.statusCode != 200) {
+        if (response.body.isNotEmpty) {
+          final errorData = jsonDecode(response.body);
+          throw Exception(errorData['message'] ?? 'Ошибка удаления книги из сохраненных');
+        }
+        throw Exception('Ошибка удаления книги из сохраненных: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Ошибка при удалении книги: $e');
+      throw Exception('Ошибка удаления книги из сохраненных: $e');
     }
   }
 } 

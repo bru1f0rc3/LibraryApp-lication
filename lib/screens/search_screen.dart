@@ -53,24 +53,47 @@ class _SearchScreenState extends State<SearchScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Введите название книги...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surfaceVariant,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: Icon(
+                          Icons.clear,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                         onPressed: () {
                           _searchController.clear();
                           _searchBooks('');
                         },
                       )
                     : null,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
               ),
               onChanged: (value) {
                 _searchBooks(value);
@@ -86,38 +109,66 @@ class _SearchScreenState extends State<SearchScreen> {
                 children: [
                   Text(
                     _error!,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => _searchBooks(_searchController.text),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     child: const Text('Повторить'),
                   ),
                 ],
               ),
             )
           else if (_searchResults.isEmpty && _searchController.text.isNotEmpty)
-            const Center(
-              child: Text('Книги не найдены'),
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search_off,
+                    size: 64,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Книги не найдены',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ],
+              ),
             )
           else
             Expanded(
               child: GridView.builder(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(16),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   childAspectRatio: 0.7,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
                 ),
                 itemCount: _searchResults.length,
                 itemBuilder: (context, index) {
                   final book = _searchResults[index];
                   return Card(
-                    elevation: 4,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                      ),
                     ),
                     child: InkWell(
                       onTap: () {
@@ -141,20 +192,20 @@ class _SearchScreenState extends State<SearchScreen> {
                                 borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(12),
                                 ),
-                                image: book.coverLink != null
+                                image: book.cover_Link != null
                                     ? DecorationImage(
-                                        image: NetworkImage(book.coverLink!),
+                                        image: NetworkImage(book.cover_Link!),
                                         fit: BoxFit.cover,
                                       )
                                     : null,
-                                color: Colors.grey[200],
+                                color: Theme.of(context).colorScheme.surfaceVariant,
                               ),
-                              child: book.coverLink == null
-                                  ? const Center(
+                              child: book.cover_Link == null
+                                  ? Center(
                                       child: Icon(
                                         Icons.book,
                                         size: 50,
-                                        color: Colors.grey,
+                                        color: Theme.of(context).colorScheme.primary,
                                       ),
                                     )
                                   : null,
@@ -163,14 +214,13 @@ class _SearchScreenState extends State<SearchScreen> {
                           Expanded(
                             flex: 2,
                             child: Padding(
-                              padding: const EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.all(12),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     book.title,
-                                    style: const TextStyle(
-                                      fontSize: 16,
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.bold,
                                     ),
                                     maxLines: 2,
@@ -178,10 +228,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    book.authorName ?? 'Автор неизвестен',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[600],
+                                    book.author ?? 'Автор неизвестен',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       fontStyle: FontStyle.italic,
                                     ),
                                     maxLines: 1,
@@ -238,9 +287,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Книга успешно запрошена'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Книга успешно запрошена'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -252,7 +301,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Ошибка при запросе книги: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -276,67 +325,118 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.book.coverLink != null)
+            if (widget.book.cover_Link != null)
               Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    widget.book.coverLink!,
+                child: Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      widget.book.cover_Link!,
+                      height: 300,
+                      width: 200,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              )
+            else
+              Center(
+                child: Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                    ),
+                  ),
+                  child: Container(
                     height: 300,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Icon(Icons.book, size: 300),
+                    width: 200,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      Icons.book,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
               ),
-            const SizedBox(height: 16),
-            Text(
-              widget.book.title,
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              widget.book.authorName ?? 'Автор неизвестен',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontStyle: FontStyle.italic,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  Icons.inventory,
-                  size: 16,
-                  color: Colors.grey[600],
+            const SizedBox(height: 24),
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  'Доступно: ${widget.book.availableQuantity}/${widget.book.quantity}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 14,
-                  ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.book.title,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.book.author ?? 'Автор неизвестен',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      widget.book.description ?? 'Описание отсутствует',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-            if (widget.book.description != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Описание:',
-                style: Theme.of(context).textTheme.titleMedium,
+            const SizedBox(height: 24),
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                ),
               ),
-              const SizedBox(height: 8),
-              Text(widget.book.description!),
-            ],
-            if (widget.book.fragment != null) ...[
-              const SizedBox(height: 16),
-              Text(
-                'Фрагмент:',
-                style: Theme.of(context).textTheme.titleMedium,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Информация о книге',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildInfoRow('Издательство', widget.book.publisher ?? 'Не указано'),
+                    _buildInfoRow('Год издания', widget.book.publicationYear?.toString() ?? 'Не указан'),
+                    _buildInfoRow('ISBN', widget.book.isbn ?? 'Не указан'),
+                    _buildInfoRow('Количество страниц', widget.book.pageCount?.toString() ?? 'Не указано'),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-              Text(widget.book.fragment!),
-            ],
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -344,6 +444,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 onPressed: _isRequesting ? null : _requestBook,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: _isRequesting
                     ? const SizedBox(
@@ -351,13 +454,40 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                         width: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : const Text('Запросить книгу'),
+                    : const Text(
+                        'Запросить книгу',
+                        style: TextStyle(fontSize: 16),
+                      ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -161,4 +161,22 @@ class AuthService {
       'Content-Type': 'application/json',
     };
   }
+
+  Future<Map<String, dynamic>> getUserById(int userId) async {
+    try {
+      final headers = await getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$baseUrl/user/$userId'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Ошибка загрузки пользователя: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Ошибка сети: $e');
+    }
+  }
 } 

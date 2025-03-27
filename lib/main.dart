@@ -8,8 +8,10 @@ import 'screens/profile_screen.dart';
 import 'screens/admin_screen.dart';
 import 'screens/librarian_screen.dart';
 import 'screens/user_history_screen.dart';
+import 'screens/book_history_screen.dart';
 import 'services/auth_service.dart';
 import 'models/auth.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
@@ -35,60 +37,8 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Библиотека',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E88E5),
-          brightness: Brightness.light,
-        ),
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-        ),
-        cardTheme: CardTheme(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          type: BottomNavigationBarType.fixed,
-          elevation: 8,
-        ),
-        drawerTheme: DrawerThemeData(
-          elevation: 8,
-          shape: RoundedRectangleBorder(
-            borderRadius: const BorderRadius.horizontal(right: Radius.circular(20)),
-          ),
-        ),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E88E5),
-          brightness: Brightness.dark,
-        ),
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-        ),
-        cardTheme: CardTheme(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          type: BottomNavigationBarType.fixed,
-          elevation: 8,
-        ),
-        drawerTheme: DrawerThemeData(
-          elevation: 8,
-          shape: RoundedRectangleBorder(
-            borderRadius: const BorderRadius.horizontal(right: Radius.circular(20)),
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
       themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
       initialRoute: '/',
       routes: {
@@ -249,33 +199,24 @@ class _MainScreenState extends State<MainScreen> {
                       Navigator.pop(context);
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const AdminScreen()),
+                        MaterialPageRoute(builder: (context) => const LibrarianScreen()),
                       );
                     },
                   ),
                 ],
-                _buildMenuItem(
-                  icon: Icons.library_books,
-                  title: 'Выданные книги',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LibrarianScreen()),
-                    );
-                  },
-                ),
-                _buildMenuItem(
-                  icon: Icons.history,
-                  title: 'История книг',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const UserHistoryScreen()),
-                    );
-                  },
-                ),
+                if (_user?.role == 2) ...[
+                  _buildMenuItem(
+                    icon: Icons.request_quote,
+                    title: 'Запросы на выдачу',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const LibrarianScreen()),
+                      );
+                    },
+                  ),
+                ],
               ],
             ),
           ),
@@ -289,10 +230,14 @@ class _MainScreenState extends State<MainScreen> {
     required String title,
     required VoidCallback onTap,
   }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      onTap: onTap,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+        title: Text(title),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
     );
   }
 
@@ -346,6 +291,59 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
             if (_user != null) ...[
+              _buildDrawerItem(
+                icon: Icons.favorite,
+                title: 'Сохраненные книги',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BookHistoryScreen(eventType: 'Saved'),
+                    ),
+                  );
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.check_circle,
+                title: 'Взятые книги',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BookHistoryScreen(eventType: 'Taken'),
+                    ),
+                  );
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.assignment_return,
+                title: 'Возвращенные книги',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BookHistoryScreen(eventType: 'Returned'),
+                    ),
+                  );
+                },
+              ),
+              _buildDrawerItem(
+                icon: Icons.history,
+                title: 'Вся история',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BookHistoryScreen(),
+                    ),
+                  );
+                },
+              ),
+              const Divider(),
               _buildDrawerItem(
                 icon: Icons.email,
                 title: 'Сменить email',
