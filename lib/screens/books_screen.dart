@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/book_service.dart';
 import '../models/book.dart';
 import '../services/auth_service.dart';
+import '../services/settings_service.dart';
+import 'add_book_screen.dart';
 
 class BooksScreen extends StatefulWidget {
   const BooksScreen({Key? key}) : super(key: key);
@@ -12,15 +14,28 @@ class BooksScreen extends StatefulWidget {
 
 class _BooksScreenState extends State<BooksScreen> {
   final BookService _bookService = BookService(AuthService());
+  final AuthService _authService = AuthService();
+  final SettingsService _settingsService = SettingsService();
   List<Book> _books = [];
   bool _isLoading = false;
   String? _error;
   bool _isGridView = true;
+  bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
     _loadBooks();
+    _checkAdminStatus();
+  }
+
+  Future<void> _checkAdminStatus() async {
+    final user = await _authService.getUser();
+    if (mounted) {
+      setState(() {
+        _isAdmin = user?.role == 1;
+      });
+    }
   }
 
   Future<void> _loadBooks() async {
@@ -31,26 +46,55 @@ class _BooksScreenState extends State<BooksScreen> {
 
     try {
       final books = await _bookService.getAllBooks();
-      setState(() {
-        _books = books;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _books = books;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(_error!),
+            ElevatedButton(
+              onPressed: _loadBooks,
+              child: const Text('Повторить'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_books.isEmpty) {
+      return const Center(
+        child: Text('Нет доступных книг'),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Книги'),
         actions: [
           IconButton(
-            icon: Icon(_isGridView ? Icons.view_list : Icons.grid_view),
+            icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
             onPressed: () {
               setState(() {
                 _isGridView = !_isGridView;
@@ -59,222 +103,144 @@ class _BooksScreenState extends State<BooksScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadBooks,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text('Повторить'),
-                      ),
-                    ],
+      body: _isGridView
+          ? GridView.builder(
+              padding: const EdgeInsets.all(8),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                childAspectRatio: 0.7,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: _books.length,
+              itemBuilder: (context, index) {
+                final book = _books[index];
+                return _buildBookCard(context, book);
+              },
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: _books.length,
+              itemBuilder: (context, index) {
+                final book = _books[index];
+                return _buildBookCard(context, book);
+              },
+            ),
+    );
+  }
+
+  Widget _buildBookCard(BuildContext context, Book book) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: InkWell(
+        onTap: () => _showBookDetails(context, book),
+        borderRadius: BorderRadius.circular(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 5,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(8),
                   ),
-                )
-              : _books.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.library_books_outlined,
-                            size: 64,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Книги не найдены',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ],
-                      ),
-                    )
-                  : _isGridView
-                      ? GridView.builder(
-                          padding: const EdgeInsets.all(4),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.4,
-                            crossAxisSpacing: 4,
-                            mainAxisSpacing: 4,
-                          ),
-                          itemCount: _books.length,
-                          itemBuilder: (context, index) {
-                            final book = _books[index];
-                            return Card(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                side: BorderSide(
-                                  color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                                ),
-                              ),
-                              child: InkWell(
-                                onTap: () => _showBookDetails(context, book),
-                                borderRadius: BorderRadius.circular(8),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      flex: 5,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius: const BorderRadius.vertical(
-                                            top: Radius.circular(8),
-                                          ),
-                                          color: Theme.of(context).colorScheme.surfaceVariant,
-                                        ),
-                                        child: book.cover_Link != null
-                                            ? ClipRRect(
-                                                borderRadius: const BorderRadius.vertical(
-                                                  top: Radius.circular(8),
-                                                ),
-                                                child: Image.network(
-                                                  book.cover_Link!,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error, stackTrace) {
-                                                    return const Center(
-                                                      child: Icon(Icons.book, size: 20),
-                                                    );
-                                                  },
-                                                ),
-                                              )
-                                            : const Center(
-                                                child: Icon(Icons.book, size: 20),
-                                              ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 4,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(4),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              book.title,
-                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 1),
-                                            Text(
-                                              book.author ?? 'Автор неизвестен',
-                                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                                fontSize: 10,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                  color: Theme.of(context).colorScheme.surfaceVariant,
+                ),
+                child: book.cover_Link != null
+                    ? ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(8),
+                        ),
+                        child: Image.network(
+                          book.cover_Link!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Center(
+                              child: Icon(Icons.book, size: 20),
                             );
                           },
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(8),
-                          itemCount: _books.length,
-                          itemBuilder: (context, index) {
-                            final book = _books[index];
-                            return Card(
-                              elevation: 0,
-                              margin: const EdgeInsets.only(bottom: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(
-                                  color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-                                ),
-                              ),
-                              child: InkWell(
-                                onTap: () => _showBookDetails(context, book),
-                                borderRadius: BorderRadius.circular(12),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 80,
-                                        height: 120,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(8),
-                                          color: Theme.of(context).colorScheme.surfaceVariant,
-                                        ),
-                                        child: book.cover_Link != null
-                                            ? ClipRRect(
-                                                borderRadius: BorderRadius.circular(8),
-                                                child: Image.network(
-                                                  book.cover_Link!,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error, stackTrace) {
-                                                    return const Center(
-                                                      child: Icon(Icons.book, size: 30),
-                                                    );
-                                                  },
-                                                ),
-                                              )
-                                            : const Center(
-                                                child: Icon(Icons.book, size: 30),
-                                              ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              book.title,
-                                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              book.author ?? 'Автор неизвестен',
-                                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
+                        ),
+                      )
+                    : const Center(
+                        child: Icon(Icons.book, size: 20),
+                      ),
+              ),
+            ),
+            Expanded(
+              flex: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            book.title,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (_isAdmin)
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 16),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AddBookScreen(
+                                    bookData: {
+                                      'id': book.id,
+                                      'title': book.title,
+                                      'description': book.description ?? '',
+                                      'fragment': book.fragment ?? '',
+                                      'cover_link': book.cover_Link ?? '',
+                                      'author_name': book.author ?? '',
+                                      'author_id': null,
+                                      'category_name': book.category ?? '',
+                                      'category_id': null,
+                                      'branch_name': book.branch ?? '',
+                                      'branch_id': null,
+                                      'publisher': book.publisher ?? '',
+                                      'publicationYear': book.publicationYear?.toString() ?? '',
+                                      'isbn': book.isbn ?? '',
+                                      'pageCount': book.pageCount?.toString() ?? '',
+                                    },
                                   ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
+                              );
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      book.author ?? 'Автор неизвестен',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontSize: 10,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

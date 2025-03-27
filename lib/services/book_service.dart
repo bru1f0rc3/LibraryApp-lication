@@ -4,7 +4,7 @@ import '../models/book.dart';
 import 'auth_service.dart';
 
 class BookService {
-  static const String baseUrl = 'http://localhost:5120/api';
+  final String _baseUrl = 'http://localhost:5120/api';
   final AuthService _authService;
 
   BookService(this._authService);
@@ -13,18 +13,19 @@ class BookService {
     try {
       final headers = await _authService.getAuthHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/bookall'),
+        Uri.parse('$_baseUrl/bookall'),
         headers: headers,
       );
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final Map<String, dynamic> data = jsonDecode(response.body);
         final List<dynamic> books = data['books'] ?? [];
         return books.map((json) => Book.fromJson(json)).toList();
       } else {
         throw Exception('Ошибка загрузки книг: ${response.statusCode}');
       }
     } catch (e) {
+      print('Error in getAllBooks: $e');
       throw Exception('Ошибка сети: $e');
     }
   }
@@ -33,7 +34,7 @@ class BookService {
     try {
       final headers = await _authService.getAuthHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/GetBookIdDetails?id=$id'),
+        Uri.parse('$_baseUrl/GetBookIdDetails?id=$id'),
         headers: headers,
       );
 
@@ -55,7 +56,7 @@ class BookService {
     try {
       final headers = await _authService.getAuthHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/Search?searchQuery=$query'),
+        Uri.parse('$_baseUrl/Search?searchQuery=$query'),
         headers: headers,
       );
 
@@ -75,7 +76,7 @@ class BookService {
     try {
       final headers = await _authService.getAuthHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/book/requested/list/requested'),
+        Uri.parse('$_baseUrl/book/requested/list/requested'),
         headers: headers,
       );
 
@@ -113,7 +114,7 @@ class BookService {
     try {
       final headers = await _authService.getAuthHeaders();
       final response = await http.post(
-        Uri.parse('$baseUrl/book/requested'),
+        Uri.parse('$_baseUrl/book/requested'),
         headers: headers,
         body: jsonEncode({
           'bookId': bookId,
@@ -122,7 +123,7 @@ class BookService {
       );
 
       if (response.statusCode != 200) {
-        throw Exception(jsonDecode(response.body)['message']);
+        throw Exception(jsonDecode(response.body)['message'] ?? 'Ошибка запроса книги');
       }
     } catch (e) {
       throw Exception('Ошибка запроса книги: $e');
@@ -133,7 +134,7 @@ class BookService {
     try {
       final headers = await _authService.getAuthHeaders();
       final response = await http.post(
-        Uri.parse('$baseUrl/book/requested/approve/$requestId'),
+        Uri.parse('$_baseUrl/book/requested/approve/$requestId'),
         headers: headers,
       );
 
@@ -149,7 +150,7 @@ class BookService {
     try {
       final headers = await _authService.getAuthHeaders();
       final response = await http.post(
-        Uri.parse('$baseUrl/book/requested/reject/$requestId'),
+        Uri.parse('$_baseUrl/book/requested/reject/$requestId'),
         headers: headers,
       );
 
@@ -165,7 +166,7 @@ class BookService {
     try {
       final headers = await _authService.getAuthHeaders();
       final response = await http.post(
-        Uri.parse('$baseUrl/book/returned'),
+        Uri.parse('$_baseUrl/book/returned'),
         headers: headers,
         body: jsonEncode({
           'bookId': bookId,
@@ -185,7 +186,7 @@ class BookService {
     try {
       final headers = await _authService.getAuthHeaders();
       final response = await http.post(
-        Uri.parse('$baseUrl/book/save'),
+        Uri.parse('$_baseUrl/book/save'),
         headers: headers,
         body: jsonEncode({
           'bookId': bookId,
@@ -194,7 +195,7 @@ class BookService {
       );
 
       if (response.statusCode != 200) {
-        throw Exception(jsonDecode(response.body)['message']);
+        throw Exception(jsonDecode(response.body)['message'] ?? 'Ошибка сохранения книги');
       }
     } catch (e) {
       throw Exception('Ошибка сохранения книги: $e');
@@ -208,7 +209,7 @@ class BookService {
       print('Заголовки запроса: $headers');
       
       final response = await http.get(
-        Uri.parse('$baseUrl/book/save/user/$accountId'),
+        Uri.parse('$_baseUrl/book/save/user/$accountId'),
         headers: headers,
       );
 
@@ -247,7 +248,7 @@ class BookService {
       print('Заголовки запроса: $headers');
       
       final response = await http.get(
-        Uri.parse('$baseUrl/book/events/user/$accountId'),
+        Uri.parse('$_baseUrl/book/events/user/$accountId'),
         headers: headers,
       );
 
@@ -286,12 +287,12 @@ class BookService {
     try {
       final headers = await _authService.getAuthHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/book/events/all'),
+        Uri.parse('$_baseUrl/book/events/all'),
         headers: headers,
       );
 
       print('Получение всех событий книг');
-      print('URL запроса: $baseUrl/book/events/all');
+      print('URL запроса: $_baseUrl/book/events/all');
       print('Заголовки запроса: $headers');
       print('Статус ответа: ${response.statusCode}');
       print('Тело ответа: ${response.body}');
@@ -332,7 +333,7 @@ class BookService {
     try {
       final headers = await _authService.getAuthHeaders();
       final response = await http.get(
-        Uri.parse('$baseUrl/Authors'),
+        Uri.parse('$_baseUrl/Authors'),
         headers: headers,
       );
 
@@ -357,11 +358,11 @@ class BookService {
       headers['Content-Type'] = 'application/json';
       
       print('Удаление книги с ID: $savedBookId');
-      print('URL запроса: $baseUrl/book/save/$savedBookId');
+      print('URL запроса: $_baseUrl/book/save/$savedBookId');
       print('Заголовки запроса: $headers');
 
       final response = await http.delete(
-        Uri.parse('$baseUrl/book/save/$savedBookId'),
+        Uri.parse('$_baseUrl/book/save/$savedBookId'),
         headers: headers,
       );
 
@@ -381,6 +382,25 @@ class BookService {
     } catch (e) {
       print('Ошибка при удалении книги: $e');
       throw Exception('Ошибка удаления книги из сохраненных: $e');
+    }
+  }
+
+  Future<List<Book>> getBooks() async {
+    try {
+      final headers = await _authService.getAuthHeaders();
+      final response = await http.get(
+        Uri.parse('$_baseUrl/books'),
+        headers: headers,
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+        return jsonList.map((json) => Book.fromJson(json)).toList();
+      } else {
+        throw Exception('Ошибка загрузки книг');
+      }
+    } catch (e) {
+      throw Exception('Ошибка сети: $e');
     }
   }
 } 

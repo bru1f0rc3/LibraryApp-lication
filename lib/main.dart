@@ -12,6 +12,7 @@ import 'screens/book_history_screen.dart';
 import 'services/auth_service.dart';
 import 'models/auth.dart';
 import 'theme/app_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,12 +26,27 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool _isDarkMode = false;
+  bool _isDarkTheme = false;
 
-  void toggleTheme() {
+  @override
+  void initState() {
+    super.initState();
+    _loadTheme();
+  }
+
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _isDarkMode = !_isDarkMode;
+      _isDarkTheme = prefs.getBool('isDarkTheme') ?? false;
     });
+  }
+
+  Future<void> _toggleTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarkTheme = !_isDarkTheme;
+    });
+    await prefs.setBool('isDarkTheme', _isDarkTheme);
   }
 
   @override
@@ -39,10 +55,10 @@ class _MyAppState extends State<MyApp> {
       title: 'Библиотека',
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      themeMode: _isDarkTheme ? ThemeMode.dark : ThemeMode.light,
       initialRoute: '/',
       routes: {
-        '/': (context) => MainScreen(toggleTheme: toggleTheme),
+        '/': (context) => MainScreen(toggleTheme: _toggleTheme),
         '/auth': (context) => const AuthScreen(),
         '/register': (context) => const RegisterScreen(),
         '/profile': (context) => const ProfileScreen(),

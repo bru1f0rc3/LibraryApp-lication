@@ -180,25 +180,31 @@ class _BookHistoryScreenState extends State<BookHistoryScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: InkWell(
-                            onTap: () async {
+                            onTap: widget.eventType == 'Saved' ? () async {
                               try {
                                 final bookDetails = await _bookService.getBookDetails(event['id']);
                                 if (mounted) {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => BookDetailsScreen(book: bookDetails),
+                                      builder: (context) => BookDetailsScreen(
+                                        book: bookDetails,
+                                        bookService: _bookService,
+                                      ),
                                     ),
                                   );
                                 }
                               } catch (e) {
                                 if (mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(e.toString())),
+                                    SnackBar(
+                                      content: Text('Ошибка при загрузке книги: $e'),
+                                      backgroundColor: Theme.of(context).colorScheme.error,
+                                    ),
                                   );
                                 }
                               }
-                            },
+                            } : null,
                             borderRadius: BorderRadius.circular(12),
                             child: Padding(
                               padding: const EdgeInsets.all(12),

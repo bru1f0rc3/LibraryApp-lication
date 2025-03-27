@@ -53,12 +53,12 @@ class _AddBookScreenState extends State<AddBookScreen> with SingleTickerProvider
     
     // Если есть данные книги, устанавливаем флаги использования существующих элементов
     if (widget.bookData != null) {
-      _useExistingAuthor = true;
-      _useExistingCategory = true;
-      _useExistingBranch = true;
-      _selectedAuthor = widget.bookData!['author_id'].toString();
-      _selectedCategory = widget.bookData!['category_id'].toString();
-      _selectedBranch = widget.bookData!['branch_id'].toString();
+      _useExistingAuthor = widget.bookData!['author_id'] != null;
+      _useExistingCategory = widget.bookData!['category_id'] != null;
+      _useExistingBranch = widget.bookData!['branch_id'] != null;
+      _selectedAuthor = widget.bookData!['author_id']?.toString();
+      _selectedCategory = widget.bookData!['category_id']?.toString();
+      _selectedBranch = widget.bookData!['branch_id']?.toString();
     }
   }
 
