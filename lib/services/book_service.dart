@@ -79,13 +79,32 @@ class BookService {
         headers: headers,
       );
 
+      print('Получение запросов на книги');
+      print('Статус ответа: ${response.statusCode}');
+      print('Тело ответа: ${response.body}');
+
       if (response.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(response.body);
-        return jsonList.cast<Map<String, dynamic>>();
+        final List<dynamic> data = jsonDecode(response.body);
+        print('Декодированные данные: $data');
+        
+        final List<Map<String, dynamic>> result = [];
+        for (var item in data) {
+          result.add({
+            'id': item['id'],
+            'bookId': item['bookId'],
+            'accountId': item['accountId'],
+            'bookTitle': item['bookTitle'],
+            'userFullName': item['userFullName'],
+            'createdAt': item['createdAt'],
+          });
+        }
+        print('Обработанные данные: $result');
+        return result;
       } else {
         throw Exception('Ошибка загрузки запрошенных книг: ${response.statusCode}');
       }
     } catch (e) {
+      print('Ошибка при получении запросов: $e');
       throw Exception('Ошибка сети: $e');
     }
   }
@@ -271,41 +290,40 @@ class BookService {
         headers: headers,
       );
 
+      print('Получение всех событий книг');
+      print('URL запроса: $baseUrl/book/events/all');
+      print('Заголовки запроса: $headers');
+      print('Статус ответа: ${response.statusCode}');
+      print('Тело ответа: ${response.body}');
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> events = data['events'] ?? [];
+        final List<dynamic> events = jsonDecode(response.body);
+        print('Декодированные события: $events');
         
         final List<Map<String, dynamic>> result = [];
         for (var event in events) {
-          try {
-            final book = await getBookDetails(event['bookId']);
-            result.add({
-              'id': event['id'] ?? 0,
-              'eventType': event['eventType'] ?? 'Unknown',
-              'createdAt': event['createdAt'] ?? '',
-              'bookTitle': book.title,
-              'cover_Link': book.cover_Link,
-              'userLogin': event['userLogin'] ?? 'Неизвестен',
-              'userFullName': event['userFullName'] ?? 'Неизвестен',
-            });
-          } catch (e) {
-            print('Ошибка получения информации о книге ${event['bookId']}: $e');
-            result.add({
-              'id': event['id'] ?? 0,
-              'eventType': event['eventType'] ?? 'Unknown',
-              'createdAt': event['createdAt'] ?? '',
-              'bookTitle': 'Книга не найдена',
-              'cover_Link': null,
-              'userLogin': event['userLogin'] ?? 'Неизвестен',
-              'userFullName': event['userFullName'] ?? 'Неизвестен',
-            });
-          }
+          print('Обработка события: $event');
+          // Добавляем все ключи, которые получаем, для отладки
+          final Map<String, dynamic> eventData = {
+            'id': event['Id'],  // Используем заглавную I
+            'eventType': event['EventType'] ?? 'Unknown',  // Заглавные буквы
+            'createdAt': event['CreatedAt'],  // Заглавные буквы
+            'bookTitle': event['BookTitle'] ?? 'Книга не найдена',  // Заглавные буквы
+            'cover_Link': event['Cover_Link'],  // Подчеркивание и заглавные буквы
+            'userLogin': event['UserLogin'] ?? 'Неизвестен',  // Заглавные буквы
+            'userFullName': event['UserFullName'] ?? 'Неизвестен',  // Заглавные буквы
+          };
+          print('Обработанное событие: $eventData');
+          result.add(eventData);
         }
+        print('Все обработанные данные: $result');
         return result;
       } else {
-        throw Exception('Ошибка сети: ${response.statusCode}');
+        print('Ошибка загрузки событий. Статус: ${response.statusCode}');
+        throw Exception('Ошибка загрузки событий: ${response.statusCode}');
       }
     } catch (e) {
+      print('Ошибка при получении всех событий: $e');
       throw Exception('Ошибка сети: $e');
     }
   }
@@ -331,19 +349,29 @@ class BookService {
 
   Future<void> removeSavedBook(int savedBookId) async {
     try {
+      if (savedBookId <= 0) {
+        throw Exception('Некорректный ID сохраненной книги');
+      }
+
       final headers = await _authService.getAuthHeaders();
       headers['Content-Type'] = 'application/json';
       
+      print('Удаление книги с ID: $savedBookId');
+      print('URL запроса: $baseUrl/book/save/$savedBookId');
+      print('Заголовки запроса: $headers');
+
       final response = await http.delete(
         Uri.parse('$baseUrl/book/save/$savedBookId'),
         headers: headers,
       );
 
-      print('Удаление книги: $savedBookId');
       print('Статус ответа: ${response.statusCode}');
       print('Тело ответа: ${response.body}');
 
-      if (response.statusCode != 200) {
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print('Успешный ответ: ${data['message']}');
+      } else {
         if (response.body.isNotEmpty) {
           final errorData = jsonDecode(response.body);
           throw Exception(errorData['message'] ?? 'Ошибка удаления книги из сохраненных');
